@@ -1,0 +1,34 @@
+name: Build master image and deploy to caprover
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - uses: mr-smithers-excellent/docker-build-push@v5
+      name: Build & push Docker image
+      with:
+        image: ${{ github.event.repository.name }}
+        tags: latest
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        addLatest: true #does not work so we add latest to tags
+
+    - uses: floms/action-caprover@v1
+      name: Deploy to caprover using created image
+      with:
+        host: 'https://captain.indigoo.cloud'
+        password: '${{ secrets.CAPROVER_PASSWORD }}'
+        app: 'viridion-placeholder'
+        image: "ghcr.io/${{ github.repository }}:latest"
